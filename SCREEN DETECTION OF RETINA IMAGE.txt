@@ -1,0 +1,53 @@
+import os
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, classification_report
+from skimage import io, color, transform
+
+# Specify the path to your dataset
+dataset_path = "path/to/diabetic_retinopathy_dataset"
+
+# Function to load and preprocess images
+def load_and_preprocess_images(folder_path, label):
+    images = []
+    labels = []x
+    
+    for filename in os.listdir(folder_path):
+        if filename.endswith(".jpg"):
+            image_path = os.path.join(folder_path, filename)
+            img = io.imread(image_path)
+            img = color.rgb2gray(img)  # Convert to grayscale
+            img = transform.resize(img, (64, 64))  # Resize for consistency
+            images.append(img.flatten())  # Flatten the image
+            labels.append(label)
+    
+    return images, labels
+
+# Load and preprocess 'accept' images
+accept_images, accept_labels = load_and_preprocess_images(os.path.join(dataset_path, "accept"), 1)
+
+# Load and preprocess 'reject' images
+reject_images, reject_labels = load_and_preprocess_images(os.path.join(dataset_path, "reject"), 0)
+
+# Concatenate 'accept' and 'reject' data
+X = np.concatenate([accept_images, reject_images], axis=0)
+y = np.concatenate([accept_labels, reject_labels], axis=0)
+
+# Split the dataset into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train a Support Vector Machine (SVM) classifier
+classifier = SVC(kernel='linear', C=1.0)
+classifier.fit(X_train, y_train)
+
+# Make predictions on the test set
+y_pred = classifier.predict(X_test)
+
+# Evaluate the model
+accuracy = accuracy_score(y_test, y_pred)
+classification_rep = classification_report(y_test, y_pred)
+
+print(f"Accuracy: {accuracy}")
+print("Classification Report:\n", classification_rep)
+
